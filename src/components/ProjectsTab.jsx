@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, ExternalLink, FileText, FolderOpen, Image, Maximize2, X } from 'lucide-react';
 import { portfolioData } from '../data/portfolioData';
 
@@ -9,40 +10,46 @@ function PreviewModal({ previewData, onClose }) {
   useEffect(() => {
     if (!previewData.isOpen) return undefined;
     const handleEscape = (event) => event.key === 'Escape' && onClose();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [previewData.isOpen, onClose]);
 
   if (!previewData.isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-academic-ink/70 p-4 backdrop-blur-md" onMouseDown={onClose}>
-      <div className="glass-card flex h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] shadow-glass" onMouseDown={(event) => event.stopPropagation()}>
-        <div className="flex items-center justify-between gap-4 border-b border-white/60 bg-white/50 px-5 py-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm print:hidden md:p-6" onMouseDown={onClose}>
+      <div className="flex h-[calc(100dvh-1.5rem)] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/20 bg-neutral-950 shadow-2xl md:h-[calc(100dvh-3rem)]" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="flex items-center justify-between gap-4 border-b border-white/10 bg-neutral-900 px-4 py-3 text-white md:px-5">
           <div>
-            <p className="section-kicker">Preview</p>
-            <h3 className="mt-1 font-bold text-academic-ink">{previewData.type === 'pdf' ? 'Trình xem PDF (Báo cáo)' : 'Trình xem Hình ảnh (Screenshot)'}</h3>
+            <p className="text-[0.68rem] font-extrabold uppercase leading-4 text-violet-200">Preview</p>
+            <h3 className="mt-1 font-bold text-white">{previewData.type === 'pdf' ? 'Trình xem PDF (Báo cáo)' : 'Trình xem Hình ảnh (Screenshot)'}</h3>
           </div>
           <div className="flex items-center gap-2">
             <a href={previewData.url} target="_blank" rel="noreferrer" className="icon-button" aria-label="Mở trong tab mới"><ExternalLink size={18} /></a>
             <button type="button" onClick={onClose} className="icon-button" aria-label="Đóng bản xem trước"><X size={20} /></button>
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-hidden bg-white/45">
+        <div className="min-h-0 flex-1 overflow-hidden bg-neutral-900">
           {previewData.type === 'pdf' ? (
             <iframe
               src={previewData.url}
               title="Bản xem trước báo cáo PDF"
-              className="block h-full w-full border-0 bg-transparent"
+              className="block h-full w-full border-0 bg-white"
             />
           ) : (
-            <div className="flex h-full items-center justify-center overflow-auto bg-transparent">
+            <div className="flex h-full items-center justify-center overflow-auto bg-neutral-900 p-4">
               <img src={previewData.url} alt="Ảnh minh chứng bài tập" className="block max-h-full max-w-full object-contain" />
             </div>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

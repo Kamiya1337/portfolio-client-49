@@ -1,6 +1,61 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { portfolioData } from '../data/portfolioData';
 import { AlertCircle, CheckCircle2, XCircle, X, Maximize2 } from 'lucide-react';
+
+function PreviewModal({ previewData, onClose }) {
+  useEffect(() => {
+    if (!previewData.isOpen) return undefined;
+    const handleEscape = (event) => event.key === 'Escape' && onClose();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [previewData.isOpen, onClose]);
+
+  if (!previewData.isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm animate-fade-in print:hidden md:p-6" onMouseDown={onClose}>
+      <div className="flex h-[calc(100dvh-1.5rem)] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/20 bg-neutral-950 shadow-2xl md:h-[calc(100dvh-3rem)]" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="flex items-center justify-between gap-4 border-b border-white/10 bg-neutral-900 px-4 py-3 text-white md:px-5">
+          <h3 className="font-bold text-white">
+            {previewData.type === 'pdf' ? 'Trình xem PDF (Báo cáo)' : 'Trình xem Hình ảnh (Screenshot)'}
+          </h3>
+          <div className="flex items-center gap-2">
+            <a href={previewData.url} target="_blank" rel="noreferrer" className="icon-button" aria-label="Mở trong tab mới">
+              <Maximize2 size={18} />
+            </a>
+            <button type="button" onClick={onClose} className="icon-button" aria-label="Đóng bản xem trước">
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-hidden bg-neutral-900">
+          {previewData.type === 'pdf' ? (
+            <iframe
+              src={previewData.url}
+              title="PDF Preview"
+              className="block h-full w-full border-0 bg-white"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center overflow-auto bg-neutral-900 p-4">
+              <img
+                src={previewData.url}
+                alt="Minh chứng"
+                className="block max-h-full max-w-full object-contain"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 export default function EvidenceTable() {
   const { projects } = portfolioData;
@@ -65,43 +120,7 @@ export default function EvidenceTable() {
     <div className="mx-auto max-w-6xl animate-fade-in pb-2">
       
       {/* KHU VỰC HIỂN THỊ POP-UP (MODAL) XEM TRƯỚC FILE */}
-      {previewData.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-academic-ink/70 p-4 backdrop-blur-md animate-fade-in print:hidden md:p-10">
-          <div className="glass-card flex h-full max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] shadow-glass">
-            {/* Thanh Header của Modal */}
-            <div className="flex items-center justify-between border-b border-white/60 bg-white/55 p-4">
-              <h3 className="flex items-center gap-2 font-bold text-academic-ink">
-                {previewData.type === 'pdf' ? 'Trình xem PDF (Báo cáo)' : 'Trình xem Hình ảnh (Screenshot)'}
-              </h3>
-              <div className="flex items-center gap-4">
-                <a href={previewData.url} target="_blank" rel="noreferrer" className="text-sm font-bold text-academic-deep-rose hover:underline">
-                  Mở thẻ mới
-                </a>
-                <button onClick={closePreview} className="icon-button">
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            
-            {/* Khu vực Nhúng nội dung */}
-            <div className="flex flex-1 items-center justify-center overflow-auto bg-white/40 p-4">
-              {previewData.type === 'pdf' ? (
-                <iframe 
-                  src={previewData.url} 
-                  title="PDF Preview" 
-                  className="h-full w-full rounded-2xl border-none bg-white shadow-sm"
-                />
-              ) : (
-                <img 
-                  src={previewData.url} 
-                  alt="Minh chứng" 
-                  className="max-h-full max-w-full rounded-2xl bg-white object-contain shadow-sm"
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <PreviewModal previewData={previewData} onClose={closePreview} />
 
       {/* GIAO DIỆN BẢNG CHÍNH */}
       <div className="mb-8 text-center">
